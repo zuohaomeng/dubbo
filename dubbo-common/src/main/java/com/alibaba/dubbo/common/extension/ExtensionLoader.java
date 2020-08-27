@@ -914,7 +914,7 @@ public class ExtensionLoader<T> {
                             urlTypeIndex, attribMethod, pts[urlTypeIndex].getName(), attribMethod);
                     code.append(s);
 
-                    // 生成赋值语句，格式如下：
+                    // 生成赋值语句，格式如下：:
                     // URL全限定名 url = argN.getter方法名()，比如
                     // com.alibaba.dubbo.common.URL url = invoker.getUrl();
                     s = String.format("%s url = arg%d.%s();", URL.class.getName(), urlTypeIndex, attribMethod);
