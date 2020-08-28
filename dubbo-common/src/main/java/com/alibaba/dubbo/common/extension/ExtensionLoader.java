@@ -1022,7 +1022,7 @@ public class ExtensionLoader<T> {
                 }
                 code.append(");");
             }
-
+            // public + 返回值全限定名 + 方法名 + (
             codeBuilder.append("\npublic ").append(rt.getCanonicalName()).append(" ").append(method.getName()).append("(");
             for (int i = 0; i < pts.length; i++) {
                 if (i > 0) {
