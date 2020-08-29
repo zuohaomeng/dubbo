@@ -38,7 +38,7 @@ import java.util.Map;
 
 /**
  * ReferenceFactoryBean
- *
+ * dubbo服务注入
  * @export
  */
 public class ReferenceBean<T> extends ReferenceConfig<T> implements FactoryBean, ApplicationContextAware, InitializingBean, DisposableBean {
@@ -61,6 +61,11 @@ public class ReferenceBean<T> extends ReferenceConfig<T> implements FactoryBean,
         SpringExtensionFactory.addApplicationContext(applicationContext);
     }
 
+    /**
+     * 获取dubbo服务对象，进行注入
+     * @return
+     * @throws Exception
+     */
     @Override
     public Object getObject() throws Exception {
         return get();

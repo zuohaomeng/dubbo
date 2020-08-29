@@ -101,10 +101,12 @@ public abstract class Wrapper {
 
         if (c == Object.class)
             return OBJECT_WRAPPER;
-
+        // 从缓存中获取 Wrapper 实例
         Wrapper ret = WRAPPER_MAP.get(c);
         if (ret == null) {
+            // 缓存未命中，创建 Wrapper
             ret = makeWrapper(c);
+            // 写入缓存
             WRAPPER_MAP.put(c, ret);
         }
         return ret;
@@ -220,18 +222,20 @@ public abstract class Wrapper {
 
         // make class
         long id = WRAPPER_CLASS_COUNTER.getAndIncrement();
+        // 创建类生成器
         ClassGenerator cc = ClassGenerator.newInstance(cl);
         cc.setClassName((Modifier.isPublic(c.getModifiers()) ? Wrapper.class.getName() : c.getName() + "$sw") + id);
         cc.setSuperClass(Wrapper.class);
 
         cc.addDefaultConstructor();
+        // 添加字段
         cc.addField("public static String[] pns;"); // property name array.
         cc.addField("public static " + Map.class.getName() + " pts;"); // property type map.
         cc.addField("public static String[] mns;"); // all method name array.
         cc.addField("public static String[] dmns;"); // declared method name array.
         for (int i = 0, len = ms.size(); i < len; i++)
             cc.addField("public static Class[] mts" + i + ";");
-
+        // 添加方法代码
         cc.addMethod("public String[] getPropertyNames(){ return pns; }");
         cc.addMethod("public boolean hasProperty(String n){ return pts.containsKey($1); }");
         cc.addMethod("public Class getPropertyType(String n){ return (Class)pts.get($1); }");
@@ -242,6 +246,7 @@ public abstract class Wrapper {
         cc.addMethod(c3.toString());
 
         try {
+            // 生成类
             Class<?> wc = cc.toClass();
             // setup static field.
             wc.getField("pts").set(null, pts);
@@ -251,6 +256,7 @@ public abstract class Wrapper {
             int ix = 0;
             for (Method m : ms.values())
                 wc.getField("mts" + ix++).set(null, m.getParameterTypes());
+            // 创建 Wrapper 实例
             return (Wrapper) wc.newInstance();
         } catch (RuntimeException e) {
             throw e;

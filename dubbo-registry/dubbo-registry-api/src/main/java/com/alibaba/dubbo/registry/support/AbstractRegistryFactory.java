@@ -80,6 +80,11 @@ public abstract class AbstractRegistryFactory implements RegistryFactory {
         }
     }
 
+    /**
+     * 抽象的注册中心
+     * @param url Registry address, is not allowed to be empty
+     * @return
+     */
     @Override
     public Registry getRegistry(URL url) {
         url = url.setPath(RegistryService.class.getName())
@@ -89,14 +94,17 @@ public abstract class AbstractRegistryFactory implements RegistryFactory {
         // Lock the registry access process to ensure a single instance of the registry
         LOCK.lock();
         try {
+            // 访问缓存
             Registry registry = REGISTRIES.get(key);
             if (registry != null) {
                 return registry;
             }
+            // 缓存未命中，创建 Registry 实例
             registry = createRegistry(url);
             if (registry == null) {
                 throw new IllegalStateException("Can not create registry " + url);
             }
+            //写入缓存
             REGISTRIES.put(key, registry);
             return registry;
         } finally {

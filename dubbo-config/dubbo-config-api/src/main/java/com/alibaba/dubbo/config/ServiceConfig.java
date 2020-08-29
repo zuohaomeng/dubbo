@@ -546,7 +546,10 @@ public class ServiceConfig<T> extends AbstractServiceConfig {
         URL url = new URL(name, host, port, (contextPath == null || contextPath.length() == 0 ? "" : contextPath + "/") + path, map);
 
 
-
+        /**
+         * 服务导出分为导出到本地 (JVM)，和导出到远程
+         */
+        // 加载 ConfiguratorFactory，并生成 Configurator 实例，然后通过实例配置 url
         if (ExtensionLoader.getExtensionLoader(ConfiguratorFactory.class)
                 .hasExtension(url.getProtocol())) {
             url = ExtensionLoader.getExtensionLoader(ConfiguratorFactory.class)
@@ -555,13 +558,16 @@ public class ServiceConfig<T> extends AbstractServiceConfig {
 
         String scope = url.getParameter(Constants.SCOPE_KEY);
         // don't export when none is configured
+        // 如果 scope = none，则什么都不做
         if (!Constants.SCOPE_NONE.toString().equalsIgnoreCase(scope)) {
 
             // export to local if the config is not remote (export to remote only when config is remote)
             if (!Constants.SCOPE_REMOTE.toString().equalsIgnoreCase(scope)) {
+                //导出服务到本地
                 exportLocal(url);
             }
             // export to remote if the config is not local (export to local only when config is local)
+            // scope != local，导出到远程
             if (!Constants.SCOPE_LOCAL.toString().equalsIgnoreCase(scope)) {
                 if (logger.isInfoEnabled()) {
                     logger.info("Export dubbo service " + interfaceClass.getName() + " to url " + url);
@@ -569,8 +575,10 @@ public class ServiceConfig<T> extends AbstractServiceConfig {
                 if (registryURLs != null && !registryURLs.isEmpty()) {
                     for (URL registryURL : registryURLs) {
                         url = url.addParameterIfAbsent(Constants.DYNAMIC_KEY, registryURL.getParameter(Constants.DYNAMIC_KEY));
+                        // 加载监视器链接
                         URL monitorUrl = loadMonitor(registryURL);
                         if (monitorUrl != null) {
+                            // 将监视器链接作为参数添加到 url 中
                             url = url.addParameterAndEncoded(Constants.MONITOR_KEY, monitorUrl.toFullString());
                         }
                         if (logger.isInfoEnabled()) {
@@ -582,14 +590,19 @@ public class ServiceConfig<T> extends AbstractServiceConfig {
                         if (StringUtils.isNotEmpty(proxy)) {
                             registryURL = registryURL.addParameter(Constants.PROXY_KEY, proxy);
                         }
-
+                        // 为服务提供类(ref)生成 Invoker
                         Invoker<?> invoker = proxyFactory.getInvoker(ref, (Class) interfaceClass, registryURL.addParameterAndEncoded(Constants.EXPORT_KEY, url.toFullString()));
+                        // DelegateProviderMetaDataInvoker 用于持有 Invoker 和 ServiceConfig
                         DelegateProviderMetaDataInvoker wrapperInvoker = new DelegateProviderMetaDataInvoker(invoker, this);
 
+                        // 导出服务，并生成 Exporter
+                        //重点导出
                         Exporter<?> exporter = protocol.export(wrapperInvoker);
                         exporters.add(exporter);
                     }
+                    // 不存在注册中心，仅导出服务
                 } else {
+                    //使用JavassistProxyFactory
                     Invoker<?> invoker = proxyFactory.getInvoker(ref, (Class) interfaceClass, url);
                     DelegateProviderMetaDataInvoker wrapperInvoker = new DelegateProviderMetaDataInvoker(invoker, this);
 
@@ -601,14 +614,23 @@ public class ServiceConfig<T> extends AbstractServiceConfig {
         this.urls.add(url);
     }
 
+    /**
+     * 导出服务到本地
+     * exportLocal 方法比较简单，首先根据 URL 协议头决定是否导出服务。
+     * 若需导出，则创建一个新的 URL 并将协议头、主机名以及端口设置成新的值。
+     * 然后创建 Invoker，并调用 InjvmProtocol 的 export 方法导出服务
+     * @param url
+     */
     @SuppressWarnings({"unchecked", "rawtypes"})
     private void exportLocal(URL url) {
+        // 如果 URL 的协议头等于 injvm，说明已经导出到本地了，无需再次导出
         if (!Constants.LOCAL_PROTOCOL.equalsIgnoreCase(url.getProtocol())) {
             URL local = URL.valueOf(url.toFullString())
                     .setProtocol(Constants.LOCAL_PROTOCOL)
                     .setHost(LOCALHOST)
                     .setPort(0);
             ServiceClassHolder.getInstance().pushServiceClass(getServiceClass(ref));
+            // 创建 Invoker，并导出服务，这里的 protocol 会在运行时调用 InjvmProtocol 的 export 方法
             Exporter<?> exporter = protocol.export(
                     proxyFactory.getInvoker(ref, (Class) interfaceClass, local));
             exporters.add(exporter);
