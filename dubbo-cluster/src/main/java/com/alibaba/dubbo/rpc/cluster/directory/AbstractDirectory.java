@@ -35,7 +35,7 @@ import java.util.List;
 
 /**
  * Abstract implementation of Directory: Invoker list returned from this Directory's list method have been filtered by Routers
- *
+ *服务目录中存储了一些和服务提供者有关的信息，通过服务目录，服务消费者可获取到服务提供者的信息，比如 ip、端口、服务协议等。通过这些信息，服务消费者就可通过 Netty 等客户端进行远程调用。
  */
 public abstract class AbstractDirectory<T> implements Directory<T> {
 
@@ -71,7 +71,10 @@ public abstract class AbstractDirectory<T> implements Directory<T> {
         if (destroyed) {
             throw new RpcException("Directory already destroyed .url: " + getUrl());
         }
+        // 调用 doList 方法列举 Invoker，doList 是模板方法，由子类实现
         List<Invoker<T>> invokers = doList(invocation);
+
+        // 获取路由 Router 列表
         List<Router> localRouters = this.routers; // local reference
         if (localRouters != null && !localRouters.isEmpty()) {
             for (Router router : localRouters) {
@@ -127,7 +130,7 @@ public abstract class AbstractDirectory<T> implements Directory<T> {
     public void destroy() {
         destroyed = true;
     }
-
+    // 模板方法，由子类实现
     protected abstract List<Invoker<T>> doList(Invocation invocation) throws RpcException;
 
 }
