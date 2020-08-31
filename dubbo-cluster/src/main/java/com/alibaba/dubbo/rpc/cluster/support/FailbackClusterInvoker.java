@@ -69,12 +69,14 @@ public class FailbackClusterInvoker<T> extends AbstractClusterInvoker<T> {
         if (retryFuture == null) {
             synchronized (this) {
                 if (retryFuture == null) {
+                    // 创建定时任务，每隔5秒执行一次
                     retryFuture = scheduledExecutorService.scheduleWithFixedDelay(new Runnable() {
 
                         @Override
                         public void run() {
                             // collect retry statistics
                             try {
+                                // 对失败的调用进行重试
                                 retryFailed();
                             } catch (Throwable t) { // Defensive fault tolerance
                                 logger.error("Unexpected error occur at collect statistic", t);
@@ -84,6 +86,7 @@ public class FailbackClusterInvoker<T> extends AbstractClusterInvoker<T> {
                 }
             }
         }
+        // 添加 invocation 和 invoker 到 failed 中
         failed.put(invocation, router);
     }
 
@@ -91,14 +94,18 @@ public class FailbackClusterInvoker<T> extends AbstractClusterInvoker<T> {
         if (failed.size() == 0) {
             return;
         }
+        // 遍历 failed，对失败的调用进行重试
         for (Map.Entry<Invocation, AbstractClusterInvoker<?>> entry : new HashMap<Invocation, AbstractClusterInvoker<?>>(
                 failed).entrySet()) {
             Invocation invocation = entry.getKey();
             Invoker<?> invoker = entry.getValue();
             try {
+                // 再次进行调用
                 invoker.invoke(invocation);
+                // 调用成功后，从 failed 中移除 invoker
                 failed.remove(invocation);
             } catch (Throwable e) {
+                // 仅打印异常，不抛出
                 logger.error("Failed retry to invoke method " + invocation.getMethodName() + ", waiting again.", e);
             }
         }
@@ -108,7 +115,11 @@ public class FailbackClusterInvoker<T> extends AbstractClusterInvoker<T> {
     protected Result doInvoke(Invocation invocation, List<Invoker<T>> invokers, LoadBalance loadbalance) throws RpcException {
         try {
             checkInvokers(invokers, invocation);
+
+            //选择invoker
             Invoker<T> invoker = select(loadbalance, invocation, invokers, null);
+
+            // 进行调用
             return invoker.invoke(invocation);
         } catch (Throwable e) {
             logger.error("Failback to invoke method " + invocation.getMethodName() + ", wait for retry in background. Ignored exception: "
