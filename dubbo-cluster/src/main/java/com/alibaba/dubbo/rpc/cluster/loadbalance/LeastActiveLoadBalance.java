@@ -27,7 +27,8 @@ import java.util.Random;
 
 /**
  * LeastActiveLoadBalance
- *
+ * 加权最小活跃数算法
+ * 活跃调用数越小，表明该服务提供者效率越高，并考虑权重影响
  */
 public class LeastActiveLoadBalance extends AbstractLoadBalance {
 
@@ -37,18 +38,30 @@ public class LeastActiveLoadBalance extends AbstractLoadBalance {
 
     @Override
     protected <T> Invoker<T> doSelect(List<Invoker<T>> invokers, URL url, Invocation invocation) {
+        //invoker总数量
         int length = invokers.size(); // Number of invokers
+        //最小活跃数
         int leastActive = -1; // The least active value of all invokers
+        // 具有相同“最小活跃数”的服务者提供者（以下用 Invoker 代称）数量
         int leastCount = 0; // The number of invokers having the same least active value (leastActive)
+        //最小活跃数下表
         int[] leastIndexs = new int[length]; // The index of invokers having the same least active value (leastActive)
+        //总权重
         int totalWeight = 0; // The sum of weights
+        // 第一个最小活跃数的 Invoker 权重值，用于与其他具有相同最小活跃数的 Invoker 的权重进行对比，
+        // 以检测是否“所有具有相同最小活跃数的 Invoker 的权重”均相等
         int firstWeight = 0; // Initial value, used for comparision
         boolean sameWeight = true; // Every invoker has the same weight value?
+
         for (int i = 0; i < length; i++) {
             Invoker<T> invoker = invokers.get(i);
+            //获取当前invoker的活跃数
             int active = RpcStatus.getStatus(invoker.getUrl(), invocation.getMethodName()).getActive(); // Active number
+            // 获取权重值
             int weight = invoker.getUrl().getMethodParameter(invocation.getMethodName(), Constants.WEIGHT_KEY, Constants.DEFAULT_WEIGHT); // Weight
+            //当前权重小于最小权重
             if (leastActive == -1 || active < leastActive) { // Restart, when find a invoker having smaller least active value.
+                // 使用当前活跃数 active 更新最小活跃数 leastActive
                 leastActive = active; // Record the current least active value
                 leastCount = 1; // Reset leastCount, count again based on current leastCount
                 leastIndexs[0] = i; // Reset
