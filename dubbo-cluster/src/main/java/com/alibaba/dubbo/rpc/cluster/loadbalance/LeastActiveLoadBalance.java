@@ -42,9 +42,9 @@ public class LeastActiveLoadBalance extends AbstractLoadBalance {
         int length = invokers.size(); // Number of invokers
         //最小活跃数
         int leastActive = -1; // The least active value of all invokers
-        // 具有相同“最小活跃数”的服务者提供者（以下用 Invoker 代称）数量
+        // 具有相同“最小活跃数”的服务者提供者数量,当最小活跃数下表使用
         int leastCount = 0; // The number of invokers having the same least active value (leastActive)
-        //最小活跃数下表
+        //最小活跃数
         int[] leastIndexs = new int[length]; // The index of invokers having the same least active value (leastActive)
         //总权重
         int totalWeight = 0; // The sum of weights
@@ -68,6 +68,7 @@ public class LeastActiveLoadBalance extends AbstractLoadBalance {
                 totalWeight = weight; // Reset
                 firstWeight = weight; // Record the weight the first invoker
                 sameWeight = true; // Reset, every invoker has the same weight value?
+            // 当前 Invoker 的活跃数 active 与最小活跃数 leastActive 相同
             } else if (active == leastActive) { // If current invoker's active value equals with leaseActive, then accumulating.
                 leastIndexs[leastCount++] = i; // Record index number of this invoker
                 totalWeight += weight; // Add this invoker's weight to totalWeight.
@@ -78,11 +79,14 @@ public class LeastActiveLoadBalance extends AbstractLoadBalance {
                 }
             }
         }
+        //如果最小活跃数只有一个。
         // assert(leastCount > 0)
         if (leastCount == 1) {
             // If we got exactly one invoker having the least active value, return this invoker directly.
             return invokers.get(leastIndexs[0]);
         }
+        //如果有多个最小活跃数相同，进行权重随机。
+        //逻辑和RandomLoadBalance相同。
         if (!sameWeight && totalWeight > 0) {
             // If (not every invoker has the same weight & at least one invoker's weight>0), select randomly based on totalWeight.
             int offsetWeight = random.nextInt(totalWeight);
