@@ -38,6 +38,8 @@ import java.util.concurrent.locks.ReentrantLock;
 
 /**
  * DefaultFuture.
+ * Dubbo 实现同步和异步调用比较关键的一点就在于由谁调用 ResponseFuture 的 get 方法。
+ * 同步调用模式下，由框架自身调用 ResponseFuture 的 get 方法。异步调用模式下，则由用户调用该方法。
  */
 public class DefaultFuture implements ResponseFuture {
 
@@ -68,9 +70,11 @@ public class DefaultFuture implements ResponseFuture {
     public DefaultFuture(Channel channel, Request request, int timeout) {
         this.channel = channel;
         this.request = request;
+        // 获取请求 id，这个 id 很重要，后面还会见到
         this.id = request.getId();
         this.timeout = timeout > 0 ? timeout : channel.getUrl().getPositiveParameter(Constants.TIMEOUT_KEY, Constants.DEFAULT_TIMEOUT);
         // put into waiting map.
+        // 存储 <requestId, DefaultFuture> 映射关系到 FUTURES 中
         FUTURES.put(id, this);
         CHANNELS.put(id, channel);
     }

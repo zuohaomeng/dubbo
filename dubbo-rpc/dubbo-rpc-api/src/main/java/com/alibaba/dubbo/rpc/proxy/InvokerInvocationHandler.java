@@ -24,6 +24,7 @@ import java.lang.reflect.Method;
 
 /**
  * InvokerHandler
+ * Invoker调用拦截器
  */
 public class InvokerInvocationHandler implements InvocationHandler {
 
@@ -33,13 +34,19 @@ public class InvokerInvocationHandler implements InvocationHandler {
         this.invoker = handler;
     }
 
+
+
+
     @Override
     public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
         String methodName = method.getName();
         Class<?>[] parameterTypes = method.getParameterTypes();
+        // 拦截定义在 Object 类中的方法（未被子类重写），比如 wait/notify
         if (method.getDeclaringClass() == Object.class) {
             return method.invoke(invoker, args);
         }
+
+        //调用invoke的toString，hashCode和equals方法
         if ("toString".equals(methodName) && parameterTypes.length == 0) {
             return invoker.toString();
         }
@@ -49,6 +56,8 @@ public class InvokerInvocationHandler implements InvocationHandler {
         if ("equals".equals(methodName) && parameterTypes.length == 1) {
             return invoker.equals(args[0]);
         }
+
+        //调用invoker接口的方法
         return invoker.invoke(new RpcInvocation(method, args)).recreate();
     }
 
