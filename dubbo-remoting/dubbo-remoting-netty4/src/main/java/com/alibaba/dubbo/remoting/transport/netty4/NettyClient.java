@@ -48,7 +48,7 @@ public class NettyClient extends AbstractClient {
     private static final NioEventLoopGroup nioEventLoopGroup = new NioEventLoopGroup(Constants.DEFAULT_IO_THREADS, new DefaultThreadFactory("NettyClientWorker", true));
 
     private Bootstrap bootstrap;
-
+    // 这里的 Channel 全限定名称为 org.jboss.netty.channel.Channel
     private volatile Channel channel; // volatile, please copy reference to use
 
     public NettyClient(final URL url, final ChannelHandler handler) throws RemotingException {
@@ -158,6 +158,7 @@ public class NettyClient extends AbstractClient {
         Channel c = channel;
         if (c == null || !c.isActive())
             return null;
+        // 获取一个 NettyChannel 类型对象
         return NettyChannel.getOrAddChannel(c, getUrl(), this);
     }
 

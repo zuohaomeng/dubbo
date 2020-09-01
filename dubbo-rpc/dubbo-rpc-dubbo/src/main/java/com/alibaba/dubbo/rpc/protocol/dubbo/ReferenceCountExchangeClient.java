@@ -31,11 +31,14 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * dubbo protocol support class.
+ *
+ * 调用个数
  */
 @SuppressWarnings("deprecation")
 final class ReferenceCountExchangeClient implements ExchangeClient {
 
     private final URL url;
+    //调用当前连接数
     private final AtomicInteger refenceCount = new AtomicInteger(0);
 
     //    private final ExchangeHandler handler;
@@ -45,6 +48,7 @@ final class ReferenceCountExchangeClient implements ExchangeClient {
 
     public ReferenceCountExchangeClient(ExchangeClient client, ConcurrentMap<String, LazyConnectExchangeClient> ghostClientMap) {
         this.client = client;
+        // 引用计数自增
         refenceCount.incrementAndGet();
         this.url = client.getUrl();
         if (ghostClientMap == null) {
@@ -60,6 +64,7 @@ final class ReferenceCountExchangeClient implements ExchangeClient {
 
     @Override
     public ResponseFuture request(Object request) throws RemotingException {
+        // 直接调用被装饰对象的同签名方法
         return client.request(request);
     }
 
@@ -80,6 +85,7 @@ final class ReferenceCountExchangeClient implements ExchangeClient {
 
     @Override
     public ResponseFuture request(Object request, int timeout) throws RemotingException {
+        // 直接调用被装饰对象的同签名方法
         return client.request(request, timeout);
     }
 
@@ -148,6 +154,7 @@ final class ReferenceCountExchangeClient implements ExchangeClient {
 
     @Override
     public void close(int timeout) {
+        // referenceCount 自减
         if (refenceCount.decrementAndGet() <= 0) {
             if (timeout == 0) {
                 client.close();
@@ -187,7 +194,7 @@ final class ReferenceCountExchangeClient implements ExchangeClient {
     public boolean isClosed() {
         return client.isClosed();
     }
-
+    /** 引用计数自增，该方法由外部调用 */
     public void incrementAndGetCount() {
         refenceCount.incrementAndGet();
     }
