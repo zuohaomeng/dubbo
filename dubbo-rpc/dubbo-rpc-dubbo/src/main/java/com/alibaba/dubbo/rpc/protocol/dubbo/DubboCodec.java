@@ -79,37 +79,48 @@ public class DubboCodec extends ExchangeCodec implements Codec2 {
             // get status.
             byte status = header[3];
             res.setStatus(status);
+            //如果是响应数据
             if (status == Response.OK) {
                 try {
                     Object data;
                     if (res.isHeartbeat()) {
+                        // 反序列化心跳数据，已废弃
                         data = decodeHeartbeatData(channel, deserialize(s, channel.getUrl(), is));
                     } else if (res.isEvent()) {
+                        // 反序列化事件数据
                         data = decodeEventData(channel, deserialize(s, channel.getUrl(), is));
                     } else {
                         DecodeableRpcResult result;
+                        // 根据 url 参数决定是否在 IO 线程上执行解码逻辑
                         if (channel.getUrl().getParameter(
                                 Constants.DECODE_IN_IO_THREAD_KEY,
                                 Constants.DEFAULT_DECODE_IN_IO_THREAD)) {
+                            // 创建 DecodeableRpcResult 对象
                             result = new DecodeableRpcResult(channel, res, is,
                                     (Invocation) getRequestData(id), proto);
+                            // 进行后续的解码工作
                             result.decode();
                         } else {
+                            // 创建 DecodeableRpcResult 对象
                             result = new DecodeableRpcResult(channel, res,
                                     new UnsafeByteArrayInputStream(readMessageData(is)),
                                     (Invocation) getRequestData(id), proto);
                         }
                         data = result;
                     }
+                    // 设置 DecodeableRpcResult 对象到 Response 对象中
                     res.setResult(data);
                 } catch (Throwable t) {
                     if (log.isWarnEnabled()) {
                         log.warn("Decode response failed: " + t.getMessage(), t);
                     }
+                    // 解码过程中出现了错误，此时设置 CLIENT_ERROR 状态码到 Response 对象中
                     res.setStatus(Response.CLIENT_ERROR);
                     res.setErrorMessage(StringUtils.toString(t));
                 }
+            // 响应状态非 OK，表明调用过程出现了异常
             } else {
+                // 反序列化异常信息，并设置到 Response 对象中
                 res.setErrorMessage(deserialize(s, channel.getUrl(), is).readUTF());
             }
             return res;
@@ -214,24 +225,36 @@ public class DubboCodec extends ExchangeCodec implements Codec2 {
     protected void encodeResponseData(Channel channel, ObjectOutput out, Object data, String version) throws IOException {
         Result result = (Result) data;
         // currently, the version value in Response records the version of Request
+        // 检测当前协议版本是否支持带有 attachment 集合的 Response 对象
         boolean attach = Version.isSupportResponseAttatchment(version);
         Throwable th = result.getException();
+        // 异常信息为空
         if (th == null) {
             Object ret = result.getValue();
+            // 调用结果为空
             if (ret == null) {
+                // 序列化响应类型
                 out.writeByte(attach ? RESPONSE_NULL_VALUE_WITH_ATTACHMENTS : RESPONSE_NULL_VALUE);
+            // 调用结果非空
             } else {
+                // 序列化响应类型
                 out.writeByte(attach ? RESPONSE_VALUE_WITH_ATTACHMENTS : RESPONSE_VALUE);
+                // 序列化调用结果
                 out.writeObject(ret);
             }
+        // 异常信息非空
         } else {
+            // 序列化响应类型
             out.writeByte(attach ? RESPONSE_WITH_EXCEPTION_WITH_ATTACHMENTS : RESPONSE_WITH_EXCEPTION);
+            // 序列化异常对象
             out.writeObject(th);
         }
 
         if (attach) {
+            // 记录 Dubbo 协议版本
             // returns current version of Response to consumer side.
             result.getAttachments().put(Constants.DUBBO_VERSION_KEY, Version.getProtocolVersion());
+            // 序列化 attachments 集合
             out.writeObject(result.getAttachments());
         }
     }
