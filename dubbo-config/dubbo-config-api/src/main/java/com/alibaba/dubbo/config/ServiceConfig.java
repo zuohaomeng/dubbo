@@ -208,7 +208,7 @@ public class ServiceConfig<T> extends AbstractServiceConfig {
         if (export != null && !export) {
             return;
         }
-        // delay > 0，延时导出服务
+        // delay > 0，延时导出服务   //是否延迟
         if (delay != null && delay > 0) {
             delayExportExecutor.schedule(new Runnable() {
                 @Override
@@ -343,7 +343,7 @@ public class ServiceConfig<T> extends AbstractServiceConfig {
             path = interfaceName;
         }
 
-        //导出服务   url
+        //导出服务
         doExportUrls();
         // ProviderModel 表示服务提供者模型，此对象中存储了与服务提供者相关的信息。
         // 比如服务的配置信息，服务实例等。每个被导出的服务对应一个 ProviderModel。
@@ -387,6 +387,7 @@ public class ServiceConfig<T> extends AbstractServiceConfig {
     /**
      * 多协议多注册中心导出服务
      * 注册服务
+     * URL(来驱动流程的执行)->[ rergistry://127.0.0.1:20880/com.meng.....]
      */
     @SuppressWarnings({"unchecked", "rawtypes"})
     private void doExportUrls() {
@@ -398,7 +399,7 @@ public class ServiceConfig<T> extends AbstractServiceConfig {
         }
     }
 
-    /**
+    /**f
      * 组装URL
      * URL 是 Dubbo 配置的载体，通过 URL 可让 Dubbo 的各种配置在各个模块之间传递。
      * @param protocolConfig
@@ -550,6 +551,7 @@ public class ServiceConfig<T> extends AbstractServiceConfig {
          * 服务导出分为导出到本地 (JVM)，和导出到远程
          */
         // 加载 ConfiguratorFactory，并生成 Configurator 实例，然后通过实例配置 url
+        //及动态修改配置
         if (ExtensionLoader.getExtensionLoader(ConfiguratorFactory.class)
                 .hasExtension(url.getProtocol())) {
             url = ExtensionLoader.getExtensionLoader(ConfiguratorFactory.class)
@@ -557,16 +559,13 @@ public class ServiceConfig<T> extends AbstractServiceConfig {
         }
 
         String scope = url.getParameter(Constants.SCOPE_KEY);
-        // don't export when none is configured
-        // 如果 scope = none，则什么都不做
+        // 如果 scope != none
         if (!Constants.SCOPE_NONE.toString().equalsIgnoreCase(scope)) {
-
-            // export to local if the config is not remote (export to remote only when config is remote)
+            //如果 scope!=remote
             if (!Constants.SCOPE_REMOTE.toString().equalsIgnoreCase(scope)) {
                 //导出服务到本地
                 exportLocal(url);
             }
-            // export to remote if the config is not local (export to local only when config is local)
             // scope != local，导出到远程
             if (!Constants.SCOPE_LOCAL.toString().equalsIgnoreCase(scope)) {
                 if (logger.isInfoEnabled()) {
@@ -595,9 +594,13 @@ public class ServiceConfig<T> extends AbstractServiceConfig {
                         // DelegateProviderMetaDataInvoker 用于持有 Invoker 和 ServiceConfig
                         DelegateProviderMetaDataInvoker wrapperInvoker = new DelegateProviderMetaDataInvoker(invoker, this);
 
-                        // 导出服务，并生成 Exporter
-                        //重点导出
+                        //**************************************
+                        // 注册服务，并生成 Exporter
+                        //重点注册
+                        //使用RegistryProtocol
                         Exporter<?> exporter = protocol.export(wrapperInvoker);
+
+
                         exporters.add(exporter);
                     }
                     // 不存在注册中心，仅导出服务

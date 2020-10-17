@@ -521,6 +521,7 @@ public class ExtensionLoader<T> {
                 instance = (T) EXTENSION_INSTANCES.get(clazz);
             }
             //注入依赖
+            //方法名以set开头的
             injectExtension(instance);
 
             Set<Class<?>> wrapperClasses = cachedWrapperClasses;
@@ -794,6 +795,7 @@ public class ExtensionLoader<T> {
     private Class<?> getAdaptiveExtensionClass() {
         // 通过 SPI 获取所有的拓展类
         getExtensionClasses();
+        //表示在类上  @Adaptive表示在类上
         if (cachedAdaptiveClass != null) {
             // 检查缓存，若缓存不为空，则直接返回缓存
             return cachedAdaptiveClass;

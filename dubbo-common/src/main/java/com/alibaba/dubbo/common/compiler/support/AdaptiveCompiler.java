@@ -22,6 +22,7 @@ import com.alibaba.dubbo.common.extension.Adaptive;
 import com.alibaba.dubbo.common.extension.ExtensionLoader;
 
 /**
+ * 自适应扩展点
  * AdaptiveCompiler. (SPI, Singleton, ThreadSafe)
  */
 @Adaptive

@@ -116,6 +116,7 @@ public class ServiceBean<T> extends ServiceConfig<T> implements InitializingBean
 
     /**
      * 导出服务
+     * 监听 spring上下文被刷新或者加载的时候触发
      * @param event
      */
     @Override
