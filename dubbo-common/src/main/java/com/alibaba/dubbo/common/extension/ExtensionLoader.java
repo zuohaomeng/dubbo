@@ -94,7 +94,8 @@ public class ExtensionLoader<T> {
     private Map<String, IllegalStateException> exceptions = new ConcurrentHashMap<String, IllegalStateException>();
 
     private ExtensionLoader(Class<?> type) {
-        this.type = type;
+        this.type = type;//指定当前类型
+        //自适应扩展点   getAdaptiveExtension
         objectFactory = (type == ExtensionFactory.class ? null : ExtensionLoader.getExtensionLoader(ExtensionFactory.class).getAdaptiveExtension());
     }
 
@@ -113,7 +114,7 @@ public class ExtensionLoader<T> {
             throw new IllegalArgumentException("Extension type(" + type +
                     ") is not extension, because WITHOUT @" + SPI.class.getSimpleName() + " Annotation!");
         }
-
+        //从缓存获取对应类型的ExtensionLoad
         ExtensionLoader<T> loader = (ExtensionLoader<T>) EXTENSION_LOADERS.get(type);
         if (loader == null) {
             EXTENSION_LOADERS.putIfAbsent(type, new ExtensionLoader<T>(type));
@@ -304,9 +305,8 @@ public class ExtensionLoader<T> {
             cachedInstances.putIfAbsent(name, new Holder<Object>());
             holder = cachedInstances.get(name);
         }
+        //instance 对应需要加载的实例
         Object instance = holder.get();
-
-
         //双重校验
         if (instance == null) {
             synchronized (holder) {
@@ -508,6 +508,7 @@ public class ExtensionLoader<T> {
     @SuppressWarnings("unchecked")
     private T createExtension(String name) {
         // 从配置文件中加载所有的拓展类，可得到“配置项名称”到“配置类”的映射关系表
+        //clazz是myprotol对应的类
         Class<?> clazz = getExtensionClasses().get(name);
         if (clazz == null) {
             throw findException(name);
