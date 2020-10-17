@@ -602,6 +602,7 @@ public class ExtensionLoader<T> {
      */
     // synchronized in getExtensionClasses
     private Map<String, Class<?>> loadExtensionClasses() {
+        //对 SPI 注解进行解析，
         final SPI defaultAnnotation = type.getAnnotation(SPI.class);
         if (defaultAnnotation != null) {
             String value = defaultAnnotation.value();
