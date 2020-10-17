@@ -65,7 +65,7 @@ public class RegistryProtocol implements Protocol {
     //providerurl <--> exporter
     private final Map<String, ExporterChangeableWrapper<?>> bounds = new ConcurrentHashMap<String, ExporterChangeableWrapper<?>>();
     private Cluster cluster;
-    private Protocol protocol;
+    private Protocol protocol;//通过set做了依赖注入
     private RegistryFactory registryFactory;
     private ProxyFactory proxyFactory;
 
@@ -99,7 +99,8 @@ public class RegistryProtocol implements Protocol {
     public void setCluster(Cluster cluster) {
         this.cluster = cluster;
     }
-
+    //set方法设置一个依赖扩展点      设置的是默认扩展点  及DubboProtocol
+    //然后进行了包装
     public void setProtocol(Protocol protocol) {
         this.protocol = protocol;
     }
@@ -146,7 +147,8 @@ public class RegistryProtocol implements Protocol {
      */
     @Override
     public <T> Exporter<T> export(final Invoker<T> originInvoker) throws RpcException {
-        // 导出服务   创建invoker对象    //就是暴露服务
+        // 导出服务   创建invoker对象    就是暴露服务
+        //本质就是创建一个netty服务
         //export invoker
         final ExporterChangeableWrapper<T> exporter = doLocalExport(originInvoker);
 
@@ -208,6 +210,8 @@ public class RegistryProtocol implements Protocol {
                     // 创建 Invoker 为委托类对象
                     final Invoker<?> invokerDelegete = new InvokerDelegete<T>(originInvoker, getProviderUrl(originInvoker));
                     // 调用 protocol 的 export 方法导出服务
+                    //DubboProtocol
+                    //QosProtocolWrapper(ProtocolListenerWrapper(ProtocolFilterWrapper(DubboProtocol())))
                     exporter = new ExporterChangeableWrapper<T>((Exporter<T>) protocol.export(invokerDelegete), originInvoker);
                     // 写缓存
                     bounds.put(key, exporter);
