@@ -129,6 +129,7 @@ public class RegistryProtocol implements Protocol {
      */
     public void register(URL registryUrl, URL registedProviderUrl) {
         //获取注册中心
+        //AbstractRegistryFactory
         Registry registry = registryFactory.getRegistry(registryUrl);
         //进行注册
         registry.register(registedProviderUrl);
@@ -211,7 +212,7 @@ public class RegistryProtocol implements Protocol {
                     final Invoker<?> invokerDelegete = new InvokerDelegete<T>(originInvoker, getProviderUrl(originInvoker));
                     // 调用 protocol 的 export 方法导出服务
                     //DubboProtocol
-                    //QosProtocolWrapper(ProtocolListenerWrapper(ProtocolFilterWrapper(DubboProtocol())))
+                    //QosProtocolWrapper(ProtocolListenerWrapper(ProtocolFilterWrapper(DubboProtocol() )))
                     exporter = new ExporterChangeableWrapper<T>((Exporter<T>) protocol.export(invokerDelegete), originInvoker);
                     // 写缓存
                     bounds.put(key, exporter);

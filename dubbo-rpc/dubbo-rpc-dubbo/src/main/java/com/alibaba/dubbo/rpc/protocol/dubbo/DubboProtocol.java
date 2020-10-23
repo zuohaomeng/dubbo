@@ -268,7 +268,7 @@ public class DubboProtocol extends AbstractProtocol {
                 stubServiceMethodsMap.put(url.getServiceKey(), stubServiceMethods);
             }
         }
-        // 启动服务器
+        // 启动服务器，暴露20880端口
         openServer(url);
         // 优化序列化
         optimizeSerialization(url);
@@ -309,11 +309,11 @@ public class DubboProtocol extends AbstractProtocol {
      */
     private ExchangeServer createServer(URL url) {
         // send readonly event when server closes, it's enabled by default
-        // 添加心跳检测配置到 url 中
         url = url.addParameterIfAbsent(Constants.CHANNEL_READONLYEVENT_SENT_KEY, Boolean.TRUE.toString());
         // enable heartbeat by default
-        // 获取 server 参数，默认为 netty
+        // 添加心跳检测配置到 url 中
         url = url.addParameterIfAbsent(Constants.HEARTBEAT_KEY, String.valueOf(Constants.DEFAULT_HEARTBEAT));
+        // 获取 server 参数，默认为 netty
         String str = url.getParameter(Constants.SERVER_KEY, Constants.DEFAULT_REMOTING_SERVER);
         // 通过 SPI 检测是否存在 server 参数所代表的 Transporter 拓展，不存在则抛出异常
         if (str != null && str.length() > 0 && !ExtensionLoader.getExtensionLoader(Transporter.class).hasExtension(str))
@@ -323,7 +323,7 @@ public class DubboProtocol extends AbstractProtocol {
         // 创建 ExchangeServer
         ExchangeServer server;
         try {
-            //重点
+            //重点------------------------------------------------------------------------------
             server = Exchangers.bind(url, requestHandler);
         } catch (RemotingException e) {
             throw new RpcException("Fail to start server(url: " + url + ") " + e.getMessage(), e);
