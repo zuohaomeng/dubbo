@@ -106,6 +106,7 @@ public class DubboInvoker<T> extends AbstractInvoker<T> {
             // 同步调用
             } else {
                 RpcContext.getContext().setFuture(null);
+                //ReferenceCountExchangeClient->HeaderExchangeClient
                 return (Result) currentClient.request(inv, timeout).get();
             }
         } catch (TimeoutException e) {

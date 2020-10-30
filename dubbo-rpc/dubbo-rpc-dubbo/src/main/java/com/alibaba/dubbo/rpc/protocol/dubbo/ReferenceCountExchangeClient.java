@@ -32,7 +32,9 @@ import java.util.concurrent.atomic.AtomicInteger;
 /**
  * dubbo protocol support class.
  *
- * 调用个数
+ * 调用个数记录
+ * ReferenceCountExchangeClient 内部定义了一个引用计数变量 referenceCount，每当该对象被引用一次 referenceCount 都会进行自增。
+ * 每当 close 方法被调用时，referenceCount 进行自减。
  */
 @SuppressWarnings("deprecation")
 final class ReferenceCountExchangeClient implements ExchangeClient {

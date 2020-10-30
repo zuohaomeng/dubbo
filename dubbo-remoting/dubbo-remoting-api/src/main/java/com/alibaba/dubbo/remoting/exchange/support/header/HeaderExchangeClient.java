@@ -39,6 +39,7 @@ import java.util.concurrent.TimeUnit;
 
 /**
  * DefaultMessageClient
+ * 封装了一些关于心跳检测的逻辑
  */
 public class HeaderExchangeClient implements ExchangeClient {
 
